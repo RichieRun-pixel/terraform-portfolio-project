@@ -14,7 +14,7 @@ resource "aws_s3_bucket_ownership_controls" "nextjs_bucket_ownership" {
   bucket = aws_s3_bucket.nextjs_bucket.id
 
   rule {
-    object_ownership = "BucketOwnerPreffered"
+    object_ownership = "BucketOwnerPreferred"
   }
 }
 
