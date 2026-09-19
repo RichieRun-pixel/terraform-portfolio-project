@@ -6,39 +6,26 @@ provider "aws" {
 resource "aws_s3_bucket" "nextjs_bucket" {
   bucket = "nextjs-portfolio-richard-2026"
 
-  }
-
-# ownership control 
-
-resource "aws_s3_bucket_ownership_controls" "nextjs_bucket_ownership" {
-  bucket = aws_s3_bucket.nextjs_bucket.id
-
-  rule {
-    object_ownership = "BucketOwnerPreferred"
+  tags = {
+    Name        = "Next.js Portfolio"
+    Environment = "production"
   }
 }
 
-# block public access
-resource "aws_s3_public_access_block" "nextjs_bucket_public_access" {
+resource "aws_s3_bucket_website_configuration" "nextjs_bucket_website" {
   bucket = aws_s3_bucket.nextjs_bucket.id
 
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
+  index_document {
+    suffix = "index.html"
+  }
+
+  error_document {
+    key = "index.html"
+  }
 }
 
-# bucket acl
 
-resource "aws_s3-bucket-acl" "nextjs_bucket_acl" {
-  depends_on = [
-    aws_s3_bucket_ownership_controls.nextjs_bucket_ownership,
-    aws_s3_public_access_block.nextjs_bucket_public_access_block,
-  ]
-  
-  bucket = aws_s3_bucket.nextjs_bucket.id
-  acl    = "public-read"
-}
+
 
 # bucket policy 
 resource "aws_s3_bucket_policy" "website_policy" {
@@ -58,12 +45,6 @@ resource "aws_s3_bucket_policy" "website_policy" {
     ]
   })
 }
-
-# origin access identity
-resource "aws_cloudfront_origin_access_identity" "origin_access_identity" {
-   comment = "OAI for Next.js Portfolio"
-}
-
 # cloudfront distribution
 
 resource "aws_cloudfront_distribution" "nextjs_distribution" {
@@ -71,16 +52,16 @@ resource "aws_cloudfront_distribution" "nextjs_distribution" {
     domain_name = aws_s3_bucket.nextjs_bucket.bucket_regional_domain_name
     origin_id   = "S3-nextjs-portfolio-richard-2026"
 
-    s3_origin_config {
-      origin_access_identity = aws_cloudfront_origin_access_identity.origin_access_identity.cloudfront_access_identity_path 
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "http-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
     }
   } 
 
-  enabled             = true
-  is_ipv6_enabled     = true
-  comment = "Next.js Portfolio site"
+  enabled            = true
   default_root_object = "index.html"
-
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD"]
     cached_methods   = ["GET", "HEAD"]
